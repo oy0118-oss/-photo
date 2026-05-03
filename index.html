@@ -2,279 +2,254 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>工程相機 PRO - iOS 版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>工程相機 Pro Max</title>
     <style>
         :root {
             --ios-blue: #007AFF;
-            --ios-bg: #F2F2F7;
-            --ios-card: #FFFFFF;
-            --ios-text: #000000;
+            --ios-gray: #8E8E93;
+            --glass: rgba(255, 255, 255, 0.1);
         }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0; background: var(--ios-bg); color: var(--ios-text);
-            user-select: none;
+            font-family: -apple-system, system-ui, sans-serif;
+            margin: 0; background: #000; color: #fff;
+            overflow: hidden;
         }
-        .container { padding: 20px; max-width: 600px; margin: auto; }
-
-        /* iOS 卡片風格 */
-        .card {
-            background: var(--ios-card); border-radius: 12px;
-            padding: 16px; margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        h2 { font-size: 22px; font-weight: 700; margin-top: 0; }
-        label { display: block; font-size: 14px; color: #8E8E93; margin-bottom: 4px; padding-left: 4px; }
-
-        /* 輸入框與按鈕 */
-        input, select {
-            width: 100%; padding: 12px; margin-bottom: 15px;
-            border-radius: 10px; border: 1px solid #D1D1D6;
-            background: #FFF; font-size: 16px; box-sizing: border-box;
-            outline: none;
-        }
-        button {
-            width: 100%; padding: 14px; border: none; border-radius: 12px;
-            font-size: 17px; font-weight: 600; cursor: pointer; transition: 0.2s;
-        }
-        button:active { opacity: 0.6; }
-        .btn-main { background: var(--ios-blue); color: white; }
-        .btn-snap { background: #34C759; color: white; margin-top: 10px; }
-        .btn-outline { background: none; color: var(--ios-blue); border: 1px solid var(--ios-blue); margin-top: 10px; }
-        .btn-delete { color: #FF3B30; font-size: 13px; background: none; margin: 0; padding: 5px; width: auto; }
-
-        /* 相機預覽 */
-        #video { width: 100%; border-radius: 12px; background: #000; margin-top: 10px; }
         
-        /* 照片項目 */
-        .photo-item { background: white; border-radius: 12px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .photo-item img { width: 100%; display: block; }
-        .photo-info { padding: 12px; font-size: 13px; line-height: 1.6; color: #333; }
+        /* 首頁設定 */
+        #homePage {
+            background: #f2f2f7; color: #000;
+            height: 100vh; overflow-y: auto; padding: 20px; box-sizing: border-box;
+        }
+        .card {
+            background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        input, select {
+            width: 100%; padding: 12px; margin: 8px 0;
+            border-radius: 10px; border: 1px solid #d1d1d6;
+            background: #fff; font-size: 16px; box-sizing: border-box;
+        }
 
-        /* 導覽切換 */
-        .page { display: none; }
-        .active { display: block; animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* 拍攝頁面全螢幕 */
+        #cameraPage { display: none; position: relative; height: 100vh; background: #000; }
+        #video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 頂部半透明控制區 */
+        .top-nav {
+            position: absolute; top: 0; width: 100%; padding: 50px 20px 15px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+            z-index: 10;
+        }
+        .nav-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+        .ios-select {
+            flex: 1; background: rgba(255,255,255,0.15); backdrop-filter: blur(15px);
+            border: none; color: white; padding: 8px; border-radius: 8px; font-size: 14px;
+        }
+
+        /* 底部操作區 */
+        .bottom-bar {
+            position: absolute; bottom: 0; width: 100%; height: 160px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            display: flex; justify-content: center; align-items: center; z-index: 10;
+        }
+        .shutter-outer {
+            width: 72px; height: 72px; border-radius: 50%;
+            border: 4px solid #fff; display: flex; justify-content: center; align-items: center;
+        }
+        .shutter-inner {
+            width: 60px; height: 60px; border-radius: 50%; background: #fff;
+            transition: transform 0.1s;
+        }
+        .shutter-inner:active { transform: scale(0.9); }
+
+        /* 左下角縮圖預覽 (類 iOS 截圖) */
+        .preview-box {
+            position: absolute; left: 20px; bottom: 100px;
+            width: 55px; height: 75px; border-radius: 6px;
+            border: 1.5px solid #fff; overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            display: none; z-index: 20;
+            transition: transform 0.2s;
+        }
+        .preview-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 右下角查看按鈕 */
+        .view-gallery {
+            position: absolute; right: 30px; bottom: 110px;
+            background: rgba(255,255,255,0.2); border-radius: 50%;
+            width: 44px; height: 44px; display: flex; justify-content: center; align-items: center;
+            z-index: 10; backdrop-filter: blur(10px);
+        }
+
+        /* 下載對話框 (Action Sheet) */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 99; }
+        #actionSheet {
+            position: fixed; bottom: -100%; left: 0; width: 100%;
+            background: #f9f9f9; border-radius: 15px 15px 0 0;
+            padding: 20px; box-sizing: border-box; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100;
+            color: #000;
+        }
+        #actionSheet.show { bottom: 0; }
+        .photo-list-scroll { max-height: 400px; overflow-y: auto; margin-top: 15px; }
+        .project-group { border-bottom: 1px solid #ddd; padding: 10px 0; }
+        .btn-ios { background: var(--ios-blue); color: #fff; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: 600; margin-bottom: 10px;}
+        .btn-cancel { background: #fff; color: var(--ios-blue); width: 100%; padding: 12px; border: none; font-size: 16px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- 首頁：設定區 -->
-    <div id="homePage" class="page active">
-        <h2>📂 工程紀錄設定</h2>
-        
-        <div class="card">
-            <label>1. 設定記錄人</label>
-            <input id="userName" type="text" placeholder="輸入您的姓名">
-            
-            <label>2. 管理專案</label>
-            <input id="newProjName" type="text" placeholder="新增專案名稱">
-            <button class="btn-main" onclick="addProject()">新增專案</button>
+<!-- 首頁：設定 -->
+<div id="homePage">
+    <h1 style="font-size: 32px; font-weight: 800; margin: 40px 0 10px;">工程相機</h1>
+    <p style="color: var(--ios-gray); margin-bottom: 30px;">Professional Engineering Camera</p>
+    
+    <div class="card">
+        <label>記錄人員姓名</label>
+        <input id="userName" type="text" placeholder="例如：王小明">
+        <label>新增專案名稱</label>
+        <div style="display: flex; gap: 8px;">
+            <input id="newProjName" type="text" placeholder="例如：台北大巨蛋" style="margin: 0;">
+            <button onclick="addProject()" style="background: var(--ios-blue); color:#fff; border:none; border-radius:10px; padding:0 15px; font-weight:600;">新增</button>
         </div>
-
-        <div class="card">
-            <label>已建立的專案</label>
-            <div id="projectList"></div>
-        </div>
-
-        <button class="btn-main" style="background:#5856D6;" onclick="goToCamera()">📸 進入拍攝模式</button>
     </div>
 
-    <!-- 拍攝頁面 -->
-    <div id="cameraPage" class="page">
-        <button class="btn-outline" onclick="goToHome()" style="margin-bottom: 15px;">⬅️ 返回設定</button>
-        
-        <div class="card">
-            <label>選擇專案</label>
-            <select id="projSelect"></select>
-            
-            <label>目前地點</label>
-            <input id="locationInput" type="text" placeholder="例如：A棟 3樓">
-            
-            <label>工項類別</label>
-            <select id="taskSelect">
-                <option>基礎工程</option>
-                <option>防水施作</option>
-                <option>磁磚舖貼</option>
-                <option>結構驗收</option>
-                <option>現場勘查</option>
-            </select>
+    <div id="projListCard" class="card" style="display:none;">
+        <label>專案資料夾</label>
+        <div id="projectListDisplay" style="font-size: 14px;"></div>
+    </div>
 
-            <video id="video" autoplay playsinline></video>
-            <button class="btn-snap" onclick="capture()">📸 拍照並加上浮水印</button>
+    <button onclick="openCamera()" style="background: var(--ios-blue); color: #fff; border:none; padding:18px; width:100%; border-radius:14px; font-size:18px; font-weight:600; margin-top: 10px;">📸 開始進入拍攝</button>
+</div>
+
+<!-- 拍攝介面 -->
+<div id="cameraPage">
+    <!-- 頂部資訊區 -->
+    <div class="top-nav">
+        <div class="nav-row">
+            <select id="projSelect" class="ios-select" onchange="switchProject()"></select>
+            <button onclick="closeCamera()" style="background:none; border:none; color:#fff; font-size:14px;">關閉</button>
         </div>
+        <div class="nav-row">
+            <input id="locInput" class="ios-select" placeholder="地點 (例：B1停車場)" style="flex:2;">
+            <select id="taskSelect" class="ios-select" style="flex:1;">
+                <option>結構工程</option><option>防水工程</option><option>水電配置</option><option>驗收紀錄</option>
+            </select>
+        </div>
+    </div>
 
-        <canvas id="canvas" style="display:none;"></canvas>
-        <div id="gallery"></div>
+    <video id="video" autoplay playsinline></video>
+
+    <!-- 左下角縮圖預覽 -->
+    <div class="preview-box" id="thumbBox" onclick="showGallery()">
+        <img id="thumbImg" src="">
+    </div>
+
+    <!-- 右下角專案庫按鈕 -->
+    <div class="view-gallery" onclick="showGallery()">
+        <span style="font-size: 20px;">📂</span>
+    </div>
+
+    <!-- 底部拍攝鈕 -->
+    <div class="bottom-bar">
+        <div class="shutter-outer" onclick="takeSnapshot()">
+            <div class="shutter-inner"></div>
+        </div>
     </div>
 </div>
 
+<!-- 專案照片集 (Action Sheet) -->
+<div class="overlay" id="overlay" onclick="hideGallery()"></div>
+<div id="actionSheet">
+    <div style="width: 40px; height: 5px; background: #ddd; border-radius: 3px; margin: 0 auto 15px;"></div>
+    <h3 style="margin:0; text-align: center;">專案照片庫</h3>
+    <div class="photo-list-scroll" id="galleryContent"></div>
+    <button class="btn-cancel" onclick="hideGallery()">關閉</button>
+</div>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
 <script>
-let projects = JSON.parse(localStorage.getItem("pro_v3_list")) || [];
-let photoStore = JSON.parse(localStorage.getItem("pro_v3_photos")) || [];
+let projects = JSON.parse(localStorage.getItem("pro_cam_list")) || [];
+let photoData = JSON.parse(localStorage.getItem("pro_cam_data")) || {}; // 格式: { "專案A": [img1, img2], "專案B": [] }
 
-// --- 初始化 ---
 function init() {
-    renderProjectList();
-    updateSelect();
+    renderHomeProjects();
+    updateCameraSelect();
 }
 
-// --- 專案管理 ---
+// 專案管理
 function addProject() {
-    const name = document.getElementById("newProjName").value.trim();
-    if(!name) return alert("請輸入專案名稱");
-    if(projects.includes(name)) return alert("專案已存在");
-    projects.push(name);
-    localStorage.setItem("pro_v3_list", JSON.stringify(projects));
-    document.getElementById("newProjName").value = "";
-    renderProjectList();
-    updateSelect();
+    const val = document.getElementById("newProjName").value.trim();
+    if(!val) return;
+    if(!projects.includes(val)) {
+        projects.push(val);
+        photoData[val] = photoData[val] || [];
+        saveAll();
+        document.getElementById("newProjName").value = "";
+        renderHomeProjects();
+        updateCameraSelect();
+    }
 }
 
-function renderProjectList() {
-    const list = document.getElementById("projectList");
-    if(projects.length === 0) {
-        list.innerHTML = "<p style='color:#8E8E93; font-size:14px;'>尚無專案</p>";
-        return;
-    }
+function renderHomeProjects() {
+    const card = document.getElementById("projListCard");
+    const list = document.getElementById("projectListDisplay");
+    if(projects.length === 0) { card.style.display="none"; return; }
+    card.style.display="block";
     list.innerHTML = projects.map(p => `
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EEE; padding:10px 0;">
-            <span>${p}</span>
-            <button class="btn-delete" onclick="deleteProject('${p}')">刪除</button>
+        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:0.5px solid #eee;">
+            <span>📁 ${p}</span>
+            <span style="color:var(--ios-gray);">${photoData[p] ? photoData[p].length : 0} 張</span>
         </div>
     `).join('');
 }
 
-function updateSelect() {
-    const select = document.getElementById("projSelect");
-    select.innerHTML = projects.map(p => `<option value="${p}">${p}</option>`).join('');
+function updateCameraSelect() {
+    const sel = document.getElementById("projSelect");
+    sel.innerHTML = projects.map(p => `<option value="${p}">${p}</option>`).join('');
 }
 
-function deleteProject(name) {
-    if(!confirm("確定要刪除專案「"+name+"」嗎？相關照片不會被刪除但將無法選取。")) return;
-    projects = projects.filter(p => p !== name);
-    localStorage.setItem("pro_v3_list", JSON.stringify(projects));
-    renderProjectList();
-    updateSelect();
-}
-
-// --- 頁面跳轉 ---
+// 相機控制
 let stream = null;
-async function goToCamera() {
-    if(projects.length === 0) return alert("請先新增一個專案");
-    document.getElementById("homePage").classList.remove("active");
-    document.getElementById("cameraPage").classList.add("active");
-    
+async function openCamera() {
+    if(projects.length === 0) return alert("請先新增專案");
+    document.getElementById("homePage").style.display = "none";
+    document.getElementById("cameraPage").style.display = "block";
     try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
-            audio: false
-        });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         document.getElementById("video").srcObject = stream;
-    } catch (e) {
-        alert("無法啟動相機，請檢查權限及是否為 HTTPS 環境");
-    }
-    renderPhotos();
+    } catch(e) { alert("無法存取相機"); }
 }
 
-function goToHome() {
+function closeCamera() {
     if(stream) stream.getTracks().forEach(t => t.stop());
-    document.getElementById("cameraPage").classList.remove("active");
-    document.getElementById("homePage").classList.add("active");
+    document.getElementById("cameraPage").style.display = "none";
+    document.getElementById("homePage").style.display = "block";
+    renderHomeProjects();
 }
 
-// --- 核心拍照功能 ---
-function capture() {
+// 拍攝與儲存
+function takeSnapshot() {
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
-
-    if (video.videoWidth === 0) return;
-
+    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    const user = document.getElementById("userName").value || "未註記";
+    const user = document.getElementById("userName").value || "現場紀錄";
     const proj = document.getElementById("projSelect").value;
-    const loc = document.getElementById("locationInput").value || "未註記";
+    const loc = document.getElementById("locInput").value || "未註記地點";
     const task = document.getElementById("taskSelect").value;
     const time = new Date().toLocaleString();
 
-    // 浮水印設計
+    // --- 精緻左下角浮水印 ---
     const h = canvas.height;
     const w = canvas.width;
-    const barH = h * 0.22;
-    
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    ctx.fillRect(0, h - barH, w, barH);
+    const fontSize = Math.floor(h * 0.02); // 縮小字體
+    const padding = h * 0.02;
 
-    ctx.fillStyle = "white";
-    const fontSize = Math.floor(h * 0.035);
-    ctx.font = `${fontSize}px Arial`;
-    
-    const padding = 30;
-    ctx.fillText(`專案：${proj}`, padding, h - barH + (fontSize * 1.5));
-    ctx.fillText(`工項：${task}`, padding, h - barH + (fontSize * 3.0));
-    ctx.fillText(`地點：${loc}`, padding, h - barH + (fontSize * 4.5));
-    ctx.fillText(`紀錄：${user} | ${time}`, padding, h - barH + (fontSize * 6.0));
-
-    const imgData = canvas.toDataURL("image/jpeg", 0.8);
-    
-    photoStore.unshift({ proj, task, loc, user, time, src: imgData });
-    try {
-        localStorage.setItem("pro_v3_photos", JSON.stringify(photoStore.slice(0, 10))); // 限制存10張防止爆容量
-    } catch(e) {
-        alert("儲存空間已滿，請刪除舊照片");
-    }
-    renderPhotos();
-}
-
-function renderPhotos() {
-    const gallery = document.getElementById("gallery");
-    gallery.innerHTML = photoStore.map((p, index) => `
-        <div class="photo-item">
-            <img src="${p.src}">
-            <div class="photo-info">
-                <b>${p.proj}</b> - ${p.task}<br>
-                地點：${p.loc}<br>
-                時間：${p.time} (${p.user})<br>
-                <button class="btn-main" style="padding:8px; font-size:14px; margin-top:8px;" onclick="downloadPhoto('${p.src}', '${p.proj}_${p.task}')">💾 下載照片到手機</button>
-                <button class="btn-delete" style="margin-left:15px;" onclick="deletePhoto(${index})">刪除</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-// --- 下載功能修正 (Blob 模式) ---
-function downloadPhoto(base64, filename) {
-    const byteString = atob(base64.split(',')[1]);
-    const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    const blob = new Blob([ab], {type: mimeString});
-    
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename + ".jpg";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function deletePhoto(index) {
-    if(!confirm("確定刪除此照片？")) return;
-    photoStore.splice(index, 1);
-    localStorage.setItem("pro_v3_photos", JSON.stringify(photoStore));
-    renderPhotos();
-}
-
-init();
-</script>
-</body>
-</html>
+    // 繪製微透明底框
+    ctx.fillStyle = "rgba(0, 0,
