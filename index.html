@@ -4,17 +4,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>工程照片系統 PRO</title>
+<title>工程照片系統 PRO+</title>
 
 <style>
-body { font-family: sans-serif; margin:0; background:#111; color:white;}
+body { background:#111; color:#fff; font-family:sans-serif; margin:0;}
 .container { padding:15px; max-width:500px; margin:auto;}
-button { padding:12px; width:100%; margin-top:8px; border:none; border-radius:8px; cursor:pointer;}
-input, select { width:100%; padding:10px; margin-top:5px; }
-.project { background:#222; padding:12px; margin:5px 0; border-radius:8px; cursor:pointer;}
-.project:hover { background:#333;}
-img { width:100%; margin-top:10px; border-radius:8px; }
-.hidden { display:none; }
+button, select, input {
+  width:100%; padding:12px; margin-top:8px; border-radius:8px; border:none;
+}
+.project { background:#222; padding:12px; margin:6px 0; border-radius:8px;}
+img { width:100%; margin-top:10px; border-radius:10px;}
+.hidden { display:none;}
 </style>
 
 </head>
@@ -25,7 +25,7 @@ img { width:100%; margin-top:10px; border-radius:8px; }
 <h2>📂 專案列表</h2>
 
 <input id="newProject" placeholder="輸入專案名稱">
-<button id="addBtn">➕ 新增專案</button>
+<button onclick="addProject()">➕ 新增專案</button>
 
 <div id="projectList"></div>
 
@@ -34,7 +34,6 @@ img { width:100%; margin-top:10px; border-radius:8px; }
 <div id="projectPage" class="hidden">
 
 <h2 id="projectTitle"></h2>
-
 <button onclick="back()">⬅️ 返回</button>
 
 <label>工項</label> <select id="task">
@@ -44,9 +43,11 @@ img { width:100%; margin-top:10px; border-radius:8px; }
 <option>檢測</option>
 </select>
 
-<video id="video" autoplay playsinline></video>
+<label>地點</label> <select id="locationSelect"></select> <input id="newLocation" placeholder="新增地點"> <button onclick="addLocation()">➕ 新增地點</button>
 
-<button onclick="takePhoto()">📸 拍照</button>
+<label>記錄人</label> <select id="personSelect"></select> <input id="newPerson" placeholder="新增記錄人"> <button onclick="addPerson()">➕ 新增記錄人</button>
+
+<video id="video" autoplay playsinline></video> <button onclick="takePhoto()">📸 拍照</button>
 
 <canvas id="canvas" class="hidden"></canvas>
 
@@ -60,83 +61,84 @@ img { width:100%; margin-top:10px; border-radius:8px; }
 let projects = JSON.parse(localStorage.getItem("projects")) || {};
 let currentProject = "";
 
-// ===== 初始化 =====
-document.getElementById("addBtn").addEventListener("click", addProject);
+// ===== 專案 =====
+function addProject(){
+  let name=document.getElementById("newProject").value.trim();
+  if(!name) return alert("請輸入專案名稱");
 
-// ===== 渲染專案 =====
+  if(projects[name]) return alert("已存在");
+
+  projects[name]={
+    photos:[],
+    locations:["未設定"],
+    persons:["未設定"]
+  };
+
+  save();
+  renderProjects();
+  document.getElementById("newProject").value="";
+}
+
 function renderProjects(){
   let html="";
-  let keys = Object.keys(projects);
-
-  if(keys.length === 0){
-    html = "<p>目前沒有專案</p>";
-  } else {
-    keys.forEach(p=>{
-      html += `<div class="project" onclick="openProject('${p}')">${p}</div>`;
-    });
+  for(let p in projects){
+    html+=`<div class="project" onclick="openProject('${p}')">${p}</div>`;
   }
-
-  document.getElementById("projectList").innerHTML = html;
+  document.getElementById("projectList").innerHTML=html;
 }
-
 renderProjects();
 
-// ===== 新增專案 =====
-function addProject(){
-  let input = document.getElementById("newProject");
-  let name = input.value.trim();
-
-  if(!name){
-    alert("請輸入專案名稱");
-    return;
-  }
-
-  if(projects[name]){
-    alert("專案已存在");
-    return;
-  }
-
-  projects[name] = [];
-  localStorage.setItem("projects", JSON.stringify(projects));
-
-  input.value = "";
-  renderProjects();
-}
-
-// ===== 開啟專案 =====
+// ===== 開專案 =====
 function openProject(name){
-  currentProject = name;
-
-  document.getElementById("projectTitle").innerText = name;
+  currentProject=name;
+  document.getElementById("projectTitle").innerText=name;
   document.getElementById("projectPage").classList.remove("hidden");
 
+  renderSelects();
   loadPhotos();
 }
 
-// ===== 返回 =====
 function back(){
   document.getElementById("projectPage").classList.add("hidden");
 }
 
-// ===== 啟動相機 =====
+// ===== 地點 / 人 =====
+function renderSelects(){
+  let p=projects[currentProject];
+
+  document.getElementById("locationSelect").innerHTML =
+    p.locations.map(l=>`<option>${l}</option>`).join("");
+
+  document.getElementById("personSelect").innerHTML =
+    p.persons.map(l=>`<option>${l}</option>`).join("");
+}
+
+function addLocation(){
+  let val=document.getElementById("newLocation").value.trim();
+  if(!val) return;
+  projects[currentProject].locations.push(val);
+  save();
+  renderSelects();
+  document.getElementById("newLocation").value="";
+}
+
+function addPerson(){
+  let val=document.getElementById("newPerson").value.trim();
+  if(!val) return;
+  projects[currentProject].persons.push(val);
+  save();
+  renderSelects();
+  document.getElementById("newPerson").value="";
+}
+
+// ===== 相機 =====
 navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
-.then(stream=>{
-  document.getElementById("video").srcObject=stream;
-})
-.catch(()=>{
-  alert("請允許相機權限");
-});
+.then(s=>video.srcObject=s);
 
 // ===== 拍照 =====
 function takePhoto(){
-  if(!currentProject){
-    alert("請先選擇專案");
-    return;
-  }
-
   let canvas=document.getElementById("canvas");
   let ctx=canvas.getContext("2d");
-  let video=document.getElementById("video");
 
   canvas.width=video.videoWidth;
   canvas.height=video.videoHeight;
@@ -145,51 +147,68 @@ function takePhoto(){
 
   let time=new Date().toLocaleString();
   let task=document.getElementById("task").value;
+  let loc=document.getElementById("locationSelect").value;
+  let person=document.getElementById("personSelect").value;
 
-  // 黑底白字
-  ctx.fillStyle="rgba(0,0,0,0.8)";
-  ctx.fillRect(20,canvas.height-100,350,80);
+  navigator.geolocation.getCurrentPosition(pos=>{
 
-  ctx.fillStyle="#fff";
-  ctx.font="16px sans-serif";
+    let gps=pos.coords.latitude.toFixed(5)+","+pos.coords.longitude.toFixed(5);
 
-  ctx.fillText("工項："+task,30,canvas.height-60);
-  ctx.fillText("時間："+time,30,canvas.height-30);
+    // 黑底白字
+    ctx.fillStyle="rgba(0,0,0,0.7)";
+    ctx.fillRect(20,canvas.height-160,360,140);
 
-  let img=canvas.toDataURL("image/jpeg");
+    ctx.fillStyle="#fff";
+    ctx.font="16px sans-serif";
 
-  projects[currentProject].push({
-    img: img,
-    time: time
+    let y=canvas.height-130;
+
+    ctx.fillText("工項："+task,30,y);
+    ctx.fillText("地點："+loc,30,y+25);
+    ctx.fillText("人員："+person,30,y+50);
+    ctx.fillText("時間："+time,30,y+75);
+    ctx.fillText("GPS："+gps,30,y+100);
+
+    let img=canvas.toDataURL("image/jpeg");
+
+    projects[currentProject].photos.push({
+      img,time,task,loc,person,gps
+    });
+
+    save();
+    loadPhotos();
+
+  },()=>{
+    alert("請開啟定位");
   });
-
-  localStorage.setItem("projects", JSON.stringify(projects));
-
-  loadPhotos();
 }
 
-// ===== 載入照片 =====
+// ===== 顯示照片 =====
 function loadPhotos(){
-  let arr = projects[currentProject] || [];
+  let arr=projects[currentProject].photos;
 
   let html="";
-
   arr.forEach(p=>{
-    html += `
+    html+=`
     <img src="${p.img}">
     <button onclick="download('${p.img}')">⬇️ 下載</button>
     `;
   });
 
-  document.getElementById("photos").innerHTML = html;
+  document.getElementById("photos").innerHTML=html;
 }
 
 // ===== 下載 =====
 function download(img){
   let a=document.createElement("a");
   a.href=img;
-  a.download="工程照片.jpg";
+  a.download="工程照片_"+Date.now()+".jpg";
   a.click();
+}
+
+// ===== 存 =====
+function save(){
+  localStorage.setItem("projects",JSON.stringify(projects));
 }
 </script>
 
