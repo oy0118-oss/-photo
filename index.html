@@ -1,233 +1,255 @@
-able_v2"}
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>工程照片系統</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>工程拍照系統 PRO</title>
+    <style>
+        :root {
+            --primary: #007AFF;
+            --danger: #FF3B30;
+            --dark-bg: #1C1C1E;
+            --card-bg: #2C2C2E;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin:0; background: var(--dark-bg); color:white;
+            line-height: 1.5;
+        }
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        
+        /* 表單與按鈕 */
+        input, select { 
+            width: 100%; padding: 12px; margin: 8px 0; 
+            border-radius: 10px; border: 1px solid #444; 
+            background: #3a3a3c; color: white; font-size: 16px;
+            box-sizing: border-box;
+        }
+        button { 
+            padding: 14px; width: 100%; margin-top: 10px; 
+            border: none; border-radius: 10px; font-weight: bold; font-size: 16px;
+            cursor: pointer; transition: opacity 0.2s;
+        }
+        button:active { opacity: 0.7; }
+        .btn-add { background: var(--primary); color: white; }
+        .btn-snap { background: var(--danger); color: white; }
+        .btn-back { background: #48484a; color: white; margin-bottom: 15px; }
+        .btn-dl { background: #34c759; color: white; margin-top: 5px; font-size: 14px; padding: 8px; }
 
-<style>
-body { background:#111; color:#fff; font-family:sans-serif; margin:0;}
-.container { padding:15px; max-width:500px; margin:auto;}
-button, select, input {
-  width:100%; padding:12px; margin-top:8px; border-radius:8px; border:none;
-}
-.project { background:#222; padding:12px; margin:6px 0; border-radius:8px;}
-img { width:100%; margin-top:10px; border-radius:10px;}
-.hidden { display:none;}
-</style>
+        /* 專案列表 */
+        .project-card { 
+            background: var(--card-bg); padding: 20px; margin: 12px 0; 
+            border-radius: 12px; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        /* 相機與預覽 */
+        #video { 
+            width: 100%; border-radius: 12px; background: #000; 
+            transform: scaleX(1); /* 若要自拍鏡頭才用 -1 */
+            margin-top: 10px;
+        }
+        .photo-item { 
+            background: var(--card-bg); padding: 10px; border-radius: 12px; margin-top: 15px; 
+        }
+        .photo-item img { width: 100%; border-radius: 8px; display: block; }
+        .photo-info { font-size: 12px; color: #aeaeb2; margin-top: 8px; }
+
+        /* 隱藏元素 */
+        .page { display: none; }
+        .active { display: block; }
+    </style>
 </head>
 
 <body>
 <div class="container">
 
-<h2>📂 專案列表</h2>
+    <div id="homePage" class="page active">
+        <h2>📂 工程專案管理</h2>
+        <div style="background: var(--card-bg); padding: 15px; border-radius: 12px;">
+            <label>建立新專案：</label>
+            <input id="newProjectName" type="text" placeholder="例如：台北101防水工程">
+            <button class="btn-add" onclick="createNewProject()">➕ 新增專案</button>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+        <div id="listContent"></div>
+    </div>
 
-<input id="projectInput" placeholder="輸入專案名稱">
-<button id="createProject">➕ 新增專案</button>
+    <div id="cameraPage" class="page">
+        <button class="btn-back" onclick="goToHome()">⬅️ 返回專案列表</button>
+        <h2 id="currentTitle" style="margin: 0 0 10px 0;"></h2>
 
-<div id="projectList"></div>
+        <div style="background: var(--card-bg); padding: 15px; border-radius: 12px;">
+            <label>目前施作工項：</label>
+            <select id="taskSelect">
+                <option value="防水施作">防水施作</option>
+                <option value="磁磚黏貼">磁磚黏貼</option>
+                <option value="鋼筋綁紮">鋼筋綁紮</option>
+                <option value="結構檢測">結構檢測</option>
+                <option value="現場勘查">現場勘查</option>
+            </select>
+            
+            <video id="video" autoplay playsinline></video>
+            <button class="btn-snap" onclick="capture()">📸 拍攝工程照 (含浮水印)</button>
+        </div>
 
-<hr>
+        <canvas id="mainCanvas" style="display:none;"></canvas>
+        
+        <h3 style="margin-top: 25px;">已拍攝照片</h3>
+        <div id="photoGallery"></div>
+    </div>
 
-<div id="projectPage" class="hidden">
-
-<h2 id="title"></h2>
-<button id="back">⬅️ 返回</button>
-
-<label>工項</label>
-<select id="task">
-<option>防水</option>
-<option>磁磚</option>
-<option>檢測</option>
-</select>
-
-<label>地點</label>
-<select id="location"></select>
-<input id="newLocation" placeholder="新增地點">
-<button id="addLocation">新增地點</button>
-
-<label>記錄人</label>
-<select id="person"></select>
-<input id="newPerson" placeholder="新增人員">
-<button id="addPerson">新增人員</button>
-
-<video id="video" autoplay playsinline></video>
-<button id="snap">📸 拍照</button>
-
-<canvas id="canvas" class="hidden"></canvas>
-
-<div id="photos"></div>
-
-</div>
 </div>
 
 <script>
+let db = JSON.parse(localStorage.getItem("eng_projs")) || {};
+let currentProject = "";
 
-document.addEventListener("DOMContentLoaded", ()=>{
-
-let db = JSON.parse(localStorage.getItem("db")) || {};
-let current = "";
-
-// ===== 存 =====
-function save(){
-  localStorage.setItem("db", JSON.stringify(db));
+// --- 介面導覽 ---
+function goToHome() {
+    document.getElementById("cameraPage").classList.remove("active");
+    document.getElementById("homePage").classList.add("active");
+    stopCamera();
+    renderProjectList();
 }
 
-// ===== render 專案 =====
-function renderProjects(){
-  let html="";
-  Object.keys(db).forEach(name=>{
-    html += <div class="project" data-name="${name}">${name}</div>;
-  });
-  document.getElementById("projectList").innerHTML = html || "尚無專案";
-}
-renderProjects();
-
-// ===== 新增專案 =====
-document.getElementById("createProject").addEventListener("click", ()=>{
-  let name = document.getElementById("projectInput").value.trim();
-
-  if(!name) return alert("請輸入名稱");
-  if(db[name]) return alert("已存在");
-
-  db[name] = {
-    photos:[],
-    locations:["未設定"],
-    persons:["未設定"]
-  };
-
-  save();
-  renderProjects();
-  document.getElementById("projectInput").value="";
-});
-
-// ===== 點專案 =====
-document.getElementById("projectList").addEventListener("click", (e)=>{
-  let name = e.target.dataset.name;
-  if(!name) return;
-
-  current = name;
-  document.getElementById("title").innerText = name;
-  document.getElementById("projectPage").classList.remove("hidden");
-
-  renderSelects();
-  loadPhotos();
-});
-
-// ===== 返回 =====
-document.getElementById("back").addEventListener("click", ()=>{
-  document.getElementById("projectPage").classList.add("hidden");
-});
-
-// ===== 地點 / 人 =====
-function renderSelects(){
-  let p = db[current];
-
-  document.getElementById("location").innerHTML =
-    p.locations.map(v=><option>${v}</option>).join("");
-
-  document.getElementById("person").innerHTML =
-    p.persons.map(v=><option>${v}</option>).join("");
+function openProject(name) {
+    currentProject = name;
+    document.getElementById("currentTitle").innerText = name;
+    document.getElementById("homePage").classList.remove("active");
+    document.getElementById("cameraPage").classList.add("active");
+    startCamera();
+    renderPhotos();
 }
 
-// 新增地點
-document.getElementById("addLocation").addEventListener("click", ()=>{
-  let val = document.getElementById("newLocation").value.trim();
-  if(!val) return;
-
-  db[current].locations.push(val);
-  save();
-  renderSelects();
-  document.getElementById("newLocation").value="";
-});
-
-// 新增人
-document.getElementById("addPerson").addEventListener("click", ()=>{
-  let val = document.getElementById("newPerson").value.trim();
-  if(!val) return;
-
-  db[current].persons.push(val);
-  save();
-  renderSelects();
-  document.getElementById("newPerson").value="";
-});
-
-// ===== 相機 =====
-let video = document.getElementById("video");
-
-navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
-.then(stream => video.srcObject = stream)
-.catch(()=> alert("請允許相機"));
-
-// ===== 拍照 =====
-document.getElementById("snap").addEventListener("click", ()=>{
-
-  if(!current) return alert("請先選專案");
-
-  let canvas = document.getElementById("canvas");
-  let ctx = canvas.getContext("2d");
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  ctx.drawImage(video,0,0);
-
-  let time = new Date().toLocaleString();
-  let task = document.getElementById("task").value;
-  let loc = document.getElementById("location").value;
-  let person = document.getElementById("person").value;
-
-  function draw(gps="無GPS"){
-    ctx.fillStyle="rgba(0,0,0,0.75)";
-    ctx.fillRect(20,canvas.height-140,360,120);
-
-    ctx.fillStyle="#fff";
-    ctx.font="14px sans-serif";
-
-    let y = canvas.height-110;
-
-    ctx.fillText("工項："+task,30,y);
-    ctx.fillText("地點："+loc,30,y+22);
-    ctx.fillText("人員："+person,30,y+44);
-    ctx.fillText("時間："+time,30,y+66);
-    ctx.fillText("GPS："+gps,30,y+88);
-
-    let img = canvas.toDataURL("image/jpeg");
-
-    db[current].photos.push({img,time});
-    save();
-    loadPhotos();
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    pos=>{
-      let gps = pos.coords.latitude.toFixed(5)+","+pos.coords.longitude.toFixed(5);
-      draw(gps);
-    },
-    ()=>draw()
-  );
-
-});
-
-// ===== 照片 =====
-function loadPhotos(){
-  let html="";
-  db[current].photos.forEach(p=>{
-    html +=     <img src="${p.img}">     <button onclick="downloadImg('${p.img}')">⬇️ 下載</button>    ;
-  });
-  document.getElementById("photos").innerHTML = html;
+// --- 專案邏輯 ---
+function createNewProject() {
+    let input = document.getElementById("newProjectName");
+    let name = input.value.trim();
+    if(!name) return alert("請輸入名稱");
+    if(db[name]) return alert("此專案已存在");
+    
+    db[name] = [];
+    saveDB();
+    input.value = "";
+    renderProjectList();
 }
 
-// ===== 下載 =====
-window.downloadImg = function(img){
-  let a = document.createElement("a");
-  a.href = img;
-  a.download = "工程照片_"+Date.now()+".jpg";
-  a.click();
-};
+function renderProjectList() {
+    let html = "";
+    for(let key in db) {
+        html += `
+        <div class="project-card" onclick="openProject('${key}')">
+            <span>🏠 ${key}</span>
+            <span style="color:#666;">${db[key].length} 張 ></span>
+        </div>`;
+    }
+    document.getElementById("listContent").innerHTML = html || "<p style='color:#666;text-align:center;'>目前尚無專案</p>";
+}
 
-});
+// --- 相機邏輯 ---
+let videoStream = null;
+async function startCamera() {
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" }, // 強制使用後鏡頭
+            audio: false
+        });
+        document.getElementById("video").srcObject = videoStream;
+    } catch (err) {
+        alert("無法開啟相機，請檢查瀏覽器權限。若在一般瀏覽器開啟，請確保使用 HTTPS 網址。");
+    }
+}
+
+function stopCamera() {
+    if(videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+    }
+}
+
+// --- 拍照與浮水印 ---
+function capture() {
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("mainCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // 設定畫布大小等於影片原始解析度
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // 1. 畫入影像
+    ctx.drawImage(video, 0, 0);
+
+    // 2. 準備浮水印文字
+    const task = document.getElementById("taskSelect").value;
+    const now = new Date();
+    const timeStr = now.getFullYear() + "/" + (now.getMonth()+1) + "/" + now.getDate() + " " + now.toLocaleTimeString();
+
+    // 3. 繪製半透明文字底條 (適應不同解析度)
+    const barHeight = canvas.height * 0.15;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+
+    // 4. 寫入文字
+    const fontSize = Math.floor(canvas.height * 0.04);
+    ctx.fillStyle = "white";
+    ctx.font = `${fontSize}px sans-serif`;
+    ctx.fillText("專案：" + currentProject, 20, canvas.height - (barHeight * 0.65));
+    ctx.fillText("工項：" + task, 20, canvas.height - (barHeight * 0.4));
+    ctx.fillText("時間：" + timeStr, 20, canvas.height - (barHeight * 0.15));
+
+    // 5. 轉成圖片儲存 (JPEG 壓縮以節省空間)
+    const imgData = canvas.toDataURL("image/jpeg", 0.7);
+
+    try {
+        db[currentProject].unshift({ // 最新照片放最前
+            src: imgData,
+            time: timeStr,
+            task: task
+        });
+        saveDB();
+        renderPhotos();
+    } catch (e) {
+        alert("儲存空間已滿！請先下載舊照片並刪除。");
+    }
+}
+
+function renderPhotos() {
+    let html = "";
+    db[currentProject].forEach((item, index) => {
+        html += `
+        <div class="photo-item">
+            <img src="${item.src}">
+            <div class="photo-info">${item.task} | ${item.time}</div>
+            <button class="btn-dl" onclick="downloadImage('${item.src}', '${item.task}')">💾 下載照片</button>
+            <button style="background:none; color:#ff453a; width:auto; font-size:12px;" onclick="deletePhoto(${index})">刪除</button>
+        </div>`;
+    });
+    document.getElementById("photoGallery").innerHTML = html;
+}
+
+function downloadImage(dataUrl, task) {
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = `${task}_${Date.now()}.jpg`;
+    link.click();
+}
+
+function deletePhoto(index) {
+    if(confirm("確定要刪除這張照片嗎？")) {
+        db[currentProject].splice(index, 1);
+        saveDB();
+        renderPhotos();
+    }
+}
+
+function saveDB() {
+    localStorage.setItem("eng_projs", JSON.stringify(db));
+}
+
+// 初始化
+renderProjectList();
 </script>
 
-</bo
+</body>
+</html>
